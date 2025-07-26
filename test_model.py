@@ -1,45 +1,47 @@
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+# from transformers import GPT2Tokenizer, GPT2LMHeadModel
+# import torch
 
-def generate_ad(prompt, tokenizer, model):
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True)
-    outputs = model.generate(
-        inputs.input_ids,
-        attention_mask=inputs.attention_mask,
-        max_length=100,
-        pad_token_id=tokenizer.eos_token_id,
-        do_sample=True,
-        top_p=0.9,
-        temperature=0.8
-    )
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return generated_text
+# def load_model(model_path):
+#     tokenizer = GPT2Tokenizer.from_pretrained(model_path)
+#     model = GPT2LMHeadModel.from_pretrained(model_path)
+#     tokenizer.pad_token = tokenizer.eos_token
+#     model.eval()
+#     return tokenizer, model
 
-def clean_generated_ad(full_text, prompt):
-    # Remove the prompt from the generated text
-    text = full_text.replace(prompt, "").strip()
-    # Remove trailing JSON or weird characters after first suspicious char
-    for stop_char in ['{', '"', '\n']:
-        if stop_char in text:
-            text = text.split(stop_char)[0].strip()
-    return text
+# def generate_ad_text(model, tokenizer, prompt, max_length=120, temperature=0.7, top_p=0.9):
+#     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
+#     with torch.no_grad():
+#         output_ids = model.generate(
+#             **inputs,
+#             max_length=max_length,
+#             do_sample=True,
+#             temperature=temperature,
+#             top_p=top_p,
+#             num_return_sequences=1
+#         )
+#     generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+#     # Remove prompt prefix if present
+#     if generated_text.startswith(prompt):
+#         generated_text = generated_text[len(prompt):].strip()
+#     return generated_text
 
-if __name__ == "__main__":
-    # Load tokenizer and model from your fine-tuned model directory
-    tokenizer = GPT2Tokenizer.from_pretrained('./models/fine_tuned_gpt2')
-    model = GPT2LMHeadModel.from_pretrained('./models/fine_tuned_gpt2')
+# def main():
+#     model_path = "./models/fine_tuned_gpt2"  # change to your model folder
+#     print("Loading model...")
+#     tokenizer, model = load_model(model_path)
+#     print("Model loaded! Enter your prompt or 'quit' to exit.")
 
-    # Fix padding token issue for GPT2 (if not done already)
-    tokenizer.pad_token = tokenizer.eos_token
-    model.config.pad_token_id = tokenizer.eos_token_id
+#     while True:
+#         prompt = input("\nEnter prompt: ")
+#         if prompt.lower() in ('quit', 'exit'):
+#             print("Exiting. Goodbye!")
+#             break
 
-    # Define one prompt to test
-    prompt = "Write a personalized Facebook ad for a 30-year-old Female interested in skincare, fashion. The product is 'Lipstick' with features: long-lasting, moisturizing."
+#         print("\nGenerating ad...")
+#         ad = generate_ad_text(model, tokenizer, prompt)
+#         print("\n--- Generated Ad ---")
+#         print(ad)
+#         print("--------------------")
 
-    # Generate ad
-    full_generated_text = generate_ad(prompt, tokenizer, model)
-
-    # Clean generated ad output
-    ad_only = clean_generated_ad(full_generated_text, prompt)
-
-    print("\n=== Generated Ad ===")
-    print(ad_only if ad_only else "No ad generated. Try again or change the prompt.")
+# if __name__ == "__main__":
+#     main()
