@@ -23,7 +23,7 @@ nlp = spacy.load("en_core_web_sm")
 
 # Step 1: Load dataset
 from datasets import load_dataset
-print("Loading dataset...")
+print("Loading dataset...") 
 dataset = load_dataset("philschmid/amazon-product-descriptions-vlm")
 df = pd.DataFrame(dataset["train"])
 print(f"Dataset loaded with {len(df)} records")

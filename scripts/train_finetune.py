@@ -2,32 +2,32 @@ from datasets import load_dataset
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 
 def tokenize_function(examples):
-    # When batched=True, examples['prompt'] and examples['target'] are lists of strings
+    # Combine prompt and target into a single training text
     texts = [p + " " + t for p, t in zip(examples['prompt'], examples['target'])]
     return tokenizer(texts, truncation=True, max_length=128)
 
 def main():
-    global tokenizer  # so tokenize_function can use it
+    global tokenizer  # So it can be used in tokenize_function
 
-    # Load tokenizer and model
+    # === Load tokenizer and model ===
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    tokenizer.pad_token = tokenizer.eos_token  # GPT2 has no pad token, set to eos_token
+    tokenizer.pad_token = tokenizer.eos_token  # Set pad token to eos (GPT-2 requirement)
     model = GPT2LMHeadModel.from_pretrained("gpt2")
 
-    # Load dataset from jsonl file
+    # === Load dataset ===
     dataset = load_dataset("json", data_files="data/train_data_clustered_prompts.jsonl", split="train")
 
-    # Tokenize dataset with the fixed tokenize_function
+    # === Tokenize dataset ===
     tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=["prompt", "target"])
 
-    # Data collator for causal LM (no masking)
+    # === Prepare data collator ===
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    # Define training arguments
+    # === Define training arguments ===
     training_args = TrainingArguments(
-        output_dir="./models",
+        output_dir="./models/fine_tuned_gpt2_clustered",   # Save everything here
         overwrite_output_dir=True,
-        num_train_epochs=3,
+        num_train_epochs=1,
         per_device_train_batch_size=4,
         save_steps=1000,
         save_total_limit=2,
@@ -35,7 +35,7 @@ def main():
         evaluation_strategy="no"
     )
 
-    # Initialize Trainer
+    # === Initialize Trainer ===
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -43,12 +43,13 @@ def main():
         data_collator=data_collator
     )
 
-    # Start training
+    # === Start training ===
     trainer.train()
 
-    # Save the fine-tuned model
-    trainer.save_model("./models/fine_tuned_gpt2_clustered")
-    print("Model fine-tuning complete and saved to './models/fine_tuned_gpt2_clustered'")
+    # === Save tokenizer (important for inference consistency) ===
+    tokenizer.save_pretrained("./models/fine_tuned_gpt2_clustered")
+
+    print("✅ Model and tokenizer saved to './models/fine_tuned_gpt2_clustered'")
 
 if __name__ == "__main__":
     main()
